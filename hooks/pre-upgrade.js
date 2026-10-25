@@ -1,41 +1,22 @@
 #!/usr/bin/env node
 /**
- * Pre-upgrade hook for zylos-openmax-kb
+ * Pre-upgrade hook for zylos-openmax-product-faq.
  *
- * Called by Claude BEFORE CLI upgrade steps.
- * If this hook fails (exit code 1), the upgrade is aborted.
- *
- * This hook handles:
- * - Backup critical data before upgrade
- * - Validate upgrade prerequisites
- * - Stop dependent services if needed
- *
- * Exit codes:
- *   0 - Continue with upgrade
- *   1 - Abort upgrade (with error message)
+ * Backs up config.json before the upgrade. Exit 1 would abort the upgrade;
+ * this hook never needs to.
  */
 
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import { dataPaths } from '../scripts/lib/paths.js';
 
-const HOME = process.env.HOME;
-const DATA_DIR = path.join(HOME, 'zylos/components/openmax-kb');
-const configPath = path.join(DATA_DIR, 'config.json');
+const P = dataPaths();
 
-console.log('[pre-upgrade] Running openmax-kb pre-upgrade checks...\n');
+console.log('[pre-upgrade] Running openmax-product-faq pre-upgrade checks...\n');
 
-// 1. Backup config before upgrade
-if (fs.existsSync(configPath)) {
-  const backupPath = configPath + '.backup';
-  fs.copyFileSync(configPath, backupPath);
+if (fs.existsSync(P.configPath)) {
+  const backupPath = P.configPath + '.backup';
+  fs.copyFileSync(P.configPath, backupPath);
   console.log('Config backed up to:', backupPath);
 }
-
-// 2. Add any pre-upgrade validations here
-// Example: Check if required services are available
-// if (!checkDependency()) {
-//   console.error('Error: Required dependency not available');
-//   process.exit(1);
-// }
 
 console.log('\n[pre-upgrade] Checks passed, proceeding with upgrade.');

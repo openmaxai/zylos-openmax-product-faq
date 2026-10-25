@@ -1,26 +1,21 @@
 #!/usr/bin/env node
 /**
- * Configure hook for zylos-openmax-kb
+ * Configure hook for zylos-openmax-product-faq
  *
- * Called by zylos after collecting SKILL.md config.required values.
- * Receives a JSON object on stdin and writes component-owned config.json.
+ * Called by zylos with the collected SKILL.md config values as a JSON object on
+ * stdin; writes component-owned config.json.
+ *
+ * Accepts the current prefix OPENMAX_FAQ_* and the legacy OPENMAX_KB_* prefix
+ * (openmax-kb ≤0.1.0); OPENMAX_FAQ_* wins when both are given.
  *
  * Example stdin:
- *   { "OPENMAX_KB_API_KEY": "secret" }
+ *   { "OPENMAX_FAQ_REPO_URL": "https://github.com/openmaxai/openmax-product-kb.git", "OPENMAX_FAQ_STALE_HOURS": "12" }
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
+import { dataPaths, readJson, writeJsonAtomic, normalizeConfig, DEFAULT_CONFIG } from '../scripts/lib/paths.js';
 
-const HOME = process.env.HOME;
-const DATA_DIR = path.join(HOME, 'zylos/components/openmax-kb');
-const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
-const COMPONENT_PREFIX = 'OPENMAX_KB_';
-
-const DEFAULT_CONFIG = {
-  repo_url: 'https://github.com/openmaxai/openmax-product-kb.git',
-  stale_hours: 24
-};
+const P = dataPaths();
+const PREFIXES = ['OPENMAX_FAQ_', 'OPENMAX_KB_'];
 
 function readStdin() {
   return new Promise((resolve, reject) => {
@@ -32,47 +27,31 @@ function readStdin() {
   });
 }
 
-function readJsonFile(filePath, fallback) {
-  try {
-    if (!fs.existsSync(filePath)) return { ...fallback };
-    return { ...fallback, ...JSON.parse(fs.readFileSync(filePath, 'utf8')) };
-  } catch (err) {
-    throw new Error(`Failed to read ${filePath}: ${err.message}`);
-  }
-}
-
-function writeJsonFile(filePath, value) {
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  const tmpPath = `${filePath}.tmp`;
-  fs.writeFileSync(tmpPath, JSON.stringify(value, null, 2) + '\n');
-  fs.renameSync(tmpPath, filePath);
-}
-
-function configKeyFromRequiredName(name) {
-  return name
-    .replace(new RegExp(`^${COMPONENT_PREFIX}`), '')
-    .toLowerCase();
+export function configKey(name) {
+  for (const p of PREFIXES) if (name.startsWith(p)) return name.slice(p.length).toLowerCase();
+  return name.toLowerCase();
 }
 
 try {
   const raw = (await readStdin()).trim();
-  if (!raw) {
-    throw new Error('Expected stdin JSON object with collected config values');
-  }
+  if (!raw) throw new Error('Expected stdin JSON object with collected config values');
 
   const collected = JSON.parse(raw);
   if (!collected || Array.isArray(collected) || typeof collected !== 'object') {
     throw new Error('Configure input must be a JSON object');
   }
 
-  const config = readJsonFile(CONFIG_PATH, DEFAULT_CONFIG);
-  for (const [name, value] of Object.entries(collected)) {
+  const config = { ...DEFAULT_CONFIG, ...(readJson(P.configPath, {}) || {}) };
+  // Legacy prefix first so the current prefix overrides it.
+  const entries = Object.entries(collected).sort(([a], [b]) =>
+    Number(a.startsWith('OPENMAX_FAQ_')) - Number(b.startsWith('OPENMAX_FAQ_')));
+  for (const [name, value] of entries) {
     if (value === undefined || value === null || value === '') continue;
-    config[configKeyFromRequiredName(name)] = value;
+    config[configKey(name)] = value;
   }
 
-  writeJsonFile(CONFIG_PATH, config);
-  console.log(`[configure] Wrote config to ${CONFIG_PATH}`);
+  writeJsonAtomic(P.configPath, normalizeConfig(config));
+  console.log(`[configure] Wrote config to ${P.configPath}`);
 } catch (err) {
   console.error(`[configure] ${err.message}`);
   process.exit(1);

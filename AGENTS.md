@@ -1,4 +1,4 @@
-# AGENTS.md — zylos-openmax-kb engineering conventions
+# AGENTS.md — zylos-openmax-product-faq engineering conventions
 
 This file binds every agent (Claude, Codex, or any other) that develops,
 reviews, or releases in this repository. CLAUDE.md points here. Extend it
@@ -10,7 +10,7 @@ Release Process section below.
 - **ESM only** — `import`/`export`, never `require()`. `"type": "module"` in package.json
 - **Node.js 20+** — Minimum runtime version
 - **Conventional commits** — `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`
-- **All config in `~/zylos/components/openmax-kb/config.json`** — never committed; code is disposable, data is permanent
+- **All config in `~/zylos/components/openmax-product-faq/config.json`** — never committed; code is disposable, data is permanent
 - **English for code** — Comments, commit messages, PR descriptions, documentation
 
 ## Release Process (hard gate)
@@ -34,6 +34,19 @@ version faces disagree in the working tree. The dedicated-release-PR and
 same-commit requirements are process gates, guaranteed by the release flow
 and review, not provable by this test. Keep the test passing and keep its
 negative controls intact — a gate that cannot fail proves nothing.
+
+## Component-specific notes
+
+- Formerly `openmax-kb` (`openmaxai/zylos-openmax-kb`). The component name comes from the
+  repo name minus `zylos-`; the skill directory, SKILL.md `name` and data dir must all be
+  `openmax-product-faq`.
+- SKILL.md is the agent-facing contract: every `kb.js --help` subcommand must appear in its
+  Commands table (`test/skill-md.test.js` enforces it). The description must stay ≤1024
+  chars and keep "MUST be checked here first" plus the Chinese trigger words.
+- Retrieval keywords live in the content repo (`openmaxai/openmax-product-kb/keywords.yml`,
+  content-team owned). `scripts/seed-keywords.json` is only the fallback.
+- No runtime hooks (UserPromptSubmit / SessionStart) and no prompt injection: retrieval only
+  happens when an agent calls `kb.js`.
 
 ## Testing
 
