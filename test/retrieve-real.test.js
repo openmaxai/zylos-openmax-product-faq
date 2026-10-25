@@ -56,3 +56,18 @@ test('real-content spot checks (zh + en, incl. a not-covered question)', () => {
   assert.match(first('Is there a free trial?'), /^Trial Period/);
   assert.equal(first('今天天气怎么样'), 'NONE');
 });
+
+for (const [label, opts] of variants) {
+  test(`[${label}] regressions: settings / What is OpenMax? hit; unrelated questions miss`, () => {
+    const idx = buildIndex(SNAPSHOT, { ...opts, commit: 'snapshot' });
+    const first = (q) => retrieve(idx, q).results[0]?.section.title || 'NONE';
+    assert.match(first('settings'), /^Account & Settings/);
+    assert.match(first('How do I change settings?'), /^Account & Settings/);
+    assert.equal(first('What is OpenMax?'), 'A · What the Product Is');
+    assert.equal(first('what is openmax'), 'A · What the Product Is');
+    assert.equal(first('OpenMax 是什么'), 'A · 产品是什么');
+    assert.match(first('账号设置在哪里'), /^账户与设置/);
+    for (const q of ['What is the weather today?', 'How do I cook pasta?', 'What can I cook for dinner?',
+      'How to use chopsticks?', '今天天气怎么样']) assert.equal(first(q), 'NONE', q);
+  });
+}

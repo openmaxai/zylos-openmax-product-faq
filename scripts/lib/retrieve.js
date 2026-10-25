@@ -10,7 +10,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { CJK_RE, normalize, prepareQuery, termPresent, tokenSet, detectLang, stripNumbering, latinWords } from './text.js';
+import { CJK_RE, normalize, prepareQuery, termPresent, keyPresent, termKey, tokenSet, detectLang, stripNumbering } from './text.js';
 import { displayTitle } from './index-builder.js';
 
 export const MAX_SECTION_CHARS = 4000;
@@ -73,13 +73,14 @@ export function scoreSections(index, question, lang) {
   const concept = new Map();
   (index.synonyms || []).forEach((g, gi) => {
     for (const t of g) {
-      const key = CJK_RE.test(t) ? t : latinWords(t).join(' ');
+      const key = termKey(t);
       if (key && !concept.has(key)) concept.set(key, `syn:${gi}`);
     }
   });
   const best = new Map(); // `${id}\0${concept}` → [value, term]
   for (const [term, postings] of Object.entries(index.inverted)) {
-    if (!termPresent(term, query)) continue;
+    // Index terms are already match keys (termKey): do not normalise them again.
+    if (!keyPresent(term, query)) continue;
     const f = lengthFactor(term);
     const c = concept.get(term) || term;
     for (const [id, w] of postings) {

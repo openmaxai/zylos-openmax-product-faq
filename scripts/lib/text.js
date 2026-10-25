@@ -21,6 +21,10 @@ export const EN_STOPWORDS = new Set([
   'min', 'openmax', 'workspace'
 ].map(stem));
 
+// Product words too common in this corpus to count as topic words on their own, but which
+// anchor an otherwise all-stopword phrase ("what is openmax") to a specific intent.
+const DOMAIN_STOPWORDS = new Set(['openmax', 'workspace'].map(stem));
+
 // Question scaffolding that carries no topic signal.
 export const ZH_STOP_BIGRAMS = new Set([
   '怎么', '么样', '什么', '为什', '么是', '可以', '可不', '不可', '以吗', '是不', '不是', '能不',
@@ -94,15 +98,47 @@ export function titleKey(title) {
   return normalize(title).replace(/[\s·・.,，、:：;；!?！？'"“”‘’「」『』《》()（）\[\]【】/／|\-—–_*`~]+/g, '');
 }
 
-/** True when a (normalized) query contains the term. */
-export function termPresent(term, query) {
-  if (CJK_RE.test(term)) return query.text.includes(term);
-  const words = latinWords(term);
-  if (words.length === 0) return false;
+/** Every stemmed Latin word in order, stopwords kept — used for phrase matching. */
+export function latinSeq(s) {
+  return [...normalize(s).matchAll(WORD_RE)].map(m => stem(m[0]));
+}
+
+/**
+ * The single normalisation boundary for keyword terms (index terms, keywords.yml terms,
+ * seed terms, synonyms): raw term → match key. CJK terms stay as text; Latin terms become
+ * their stemmed content words. A Latin term made only of stopwords is dropped ("how much"),
+ * unless it names the product ("what is openmax"): then it is kept as an exact stemmed phrase.
+ * Keys are already normalised — never pass a key through latinWords()/stem() again.
+ */
+export function termKey(term) {
+  const t = normalize(term).trim().replace(/\s+/g, ' ');
+  if (!t || CJK_RE.test(t)) return t;
+  const words = latinWords(t);
+  if (words.length > 0) return words.join(' ');
+  const seq = latinSeq(t);
+  return seq.some(w => DOMAIN_STOPWORDS.has(w)) ? seq.join(' ') : '';
+}
+
+/** True when a prepared query contains a match key (output of termKey). */
+export function keyPresent(key, query) {
+  if (!key) return false;
+  if (CJK_RE.test(key)) return query.text.includes(key);
+  const words = key.split(' ');
+  // Keys with a stopword are stopword-only phrases: require the exact word sequence.
+  if (words.some(w => EN_STOPWORDS.has(w))) return ` ${query.seq} `.includes(` ${key} `);
   return words.every(w => query.words.has(w));
+}
+
+/** True when a prepared query contains a raw (un-normalised) term. */
+export function termPresent(term, query) {
+  return keyPresent(termKey(term), query);
 }
 
 export function prepareQuery(question) {
   const text = normalize(question);
-  return { raw: question, text, words: new Set(latinWords(text)), tokens: tokenSet(text) };
+  return {
+    raw: question, text,
+    words: new Set(latinWords(text)), seq: latinSeq(text).join(' '),
+    tokens: tokenSet(text)
+  };
 }

@@ -18,10 +18,10 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { parseYaml } from './yaml-lite.js';
-import { CJK_RE, normalize, stripNumbering, titleKey, latinWords, countCjk, tokenSet } from './text.js';
+import { CJK_RE, normalize, stripNumbering, titleKey, latinWords, countCjk, tokenSet, termKey } from './text.js';
 import { writeJsonAtomic } from './paths.js';
 
-export const INDEX_SCHEMA = 1;
+export const INDEX_SCHEMA = 2;
 export const KEYWORDS_FILE = 'keywords.yml';
 const MAX_TITLE_DF = 3;
 
@@ -284,14 +284,9 @@ export function buildIndex(repoDir, opts = {}) {
   }
 
   const addTerm = (sec, term, weight, kind) => {
-    let t = normalize(term).trim().replace(/\s+/g, ' ');
+    // Latin terms are keyed by their stems so "credit" / "credits" count once.
+    const t = termKey(term);
     if (!t) return;
-    if (!CJK_RE.test(t)) {
-      // Latin terms are keyed by their stems so "credit" / "credits" count once.
-      const words = latinWords(t);
-      if (words.length === 0) return;
-      t = words.join(' ');
-    }
     const prev = sec.terms.get(t);
     if (!prev || prev.weight < weight) sec.terms.set(t, { weight, kind });
   };

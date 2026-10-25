@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildIndex } from '../scripts/lib/index-builder.js';
 import { retrieve, formatAsk, MAX_SECTION_CHARS } from '../scripts/lib/retrieve.js';
-import { detectLang, termPresent, prepareQuery, stripNumbering } from '../scripts/lib/text.js';
+import { detectLang, termPresent, keyPresent, termKey, prepareQuery, stripNumbering } from '../scripts/lib/text.js';
 import { MINI, makeContentRepo } from './helpers.js';
 
 const titles = (r) => r.results.map(x => x.section.title);
@@ -19,6 +19,21 @@ test('termPresent: CJK substring, Latin stems (credits ~ credit), phrases need a
   assert.ok(termPresent('credit card', q));
   assert.ok(!termPresent('credit pack', q));
   assert.ok(termPresent('试用', prepareQuery('试用会自动扣费吗')));
+});
+
+test('index keys are normalised exactly once (settings → setting, never re-stemmed to sett)', () => {
+  assert.equal(termKey('Settings'), 'setting');
+  const q = prepareQuery('How do I change settings?');
+  assert.ok(keyPresent(termKey('settings'), q));
+  assert.ok(termPresent('settings', q));
+});
+
+test('stopword-only terms: dropped unless anchored by the product name, then exact phrase', () => {
+  assert.equal(termKey('how much'), '');
+  assert.equal(termKey('what can'), '');
+  assert.equal(termKey('what is openmax'), 'what is openmax');
+  assert.ok(termPresent('what is openmax', prepareQuery('What is OpenMax?')));
+  assert.ok(!termPresent('what is openmax', prepareQuery('What plans does OpenMax have? What is a seat?')));
 });
 
 test('stripNumbering only strips real numbering', () => {
