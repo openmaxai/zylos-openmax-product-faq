@@ -1,6 +1,6 @@
 {
   "name": "zylos-openmax-product-faq",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "OpenMax product FAQ: local sync and keyword retrieval (ask) over the OpenMax product knowledge base (formerly openmax-kb)",
   "type": "module",
   "scripts": {
