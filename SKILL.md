@@ -1,6 +1,6 @@
 ---
 name: openmax-product-faq
-version: 0.1.0
+version: 0.2.0
 description: >-
   Official OpenMax product FAQ and knowledge base (customer-facing, synced from
   openmax-product-kb). Use it to answer any question about OpenMax / OpenMax Workspace
