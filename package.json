@@ -1,0 +1,29 @@
+{
+  "name": "zylos-openmax-kb",
+  "version": "0.1.0",
+  "description": "Local sync and query of the OpenMax product knowledge base",
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "homepage": "https://github.com/openmaxai/zylos-openmax-kb#readme",
+  "bugs": {
+    "url": "https://github.com/openmaxai/zylos-openmax-kb/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openmaxai/zylos-openmax-kb.git"
+  },
+  "keywords": [
+    "zylos",
+    "openmax-kb",
+    "agent",
+    "knowledge-base"
+  ],
+  "author": "Zylos AI",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {}
+}
