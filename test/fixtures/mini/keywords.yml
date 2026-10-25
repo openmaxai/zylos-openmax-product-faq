@@ -1,0 +1,14 @@
+# fixture keywords
+version: 1
+synonyms:
+  积分: [credit, credits, 点数]
+sections:
+  "试用期（Trial·高频）":
+    strong: [绑卡, 试用]
+    weak: [扣款]
+  "Credit":                      # prefix key, resolves to "3 Credit（积分）"
+    strong: [余额, top-up]
+  "Escalation":
+    zh: [退款, 发票]
+    en: { strong: [refund, invoice], weak: [contract] }
+  "No Such Section": [nothing]

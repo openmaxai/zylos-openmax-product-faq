@@ -1,0 +1,4 @@
+Snapshot of openmaxai/openmax-product-kb README-zh.md / README.md at commit 301621d
+(2026-10-22), used offline by test/retrieve-real.test.js. keywords.draft.yml is the first
+draft of the content repo's keywords.yml (OPENM-948). Refresh when the content structure
+changes; tests only assume the Q&A references resolve.
